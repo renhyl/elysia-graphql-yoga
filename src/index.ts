@@ -1,65 +1,61 @@
-import { type Elysia } from 'elysia'
-import type { CreateMobius, Resolver } from 'graphql-mobius'
-
+import type { IExecutableSchemaDefinition } from '@graphql-tools/schema';
+import type { TypeSource } from '@graphql-tools/utils';
+import { type Elysia } from 'elysia';
+import type { CreateMobius, Resolver } from 'graphql-mobius';
 import {
-    createYoga,
-    createSchema,
-    type GraphQLSchemaWithContext,
-    type YogaServerOptions,
-    type YogaInitialContext
-} from 'graphql-yoga'
-import type { IExecutableSchemaDefinition } from '@graphql-tools/schema'
-import type { TypeSource } from '@graphql-tools/utils'
+  createSchema,
+  createYoga,
+  type GraphQLSchemaWithContext,
+  type YogaInitialContext,
+  type YogaServerOptions,
+} from 'graphql-yoga';
 
-type MaybePromise<T> = T | Promise<T>
+type MaybePromise<T> = T | Promise<T>;
 
 type Prettify<T> = {
-    [K in keyof T]: T[K]
-} & {}
+  [K in keyof T]: T[K];
+} & {};
 
 interface ElysiaYogaConfig<
-    TypeDefs extends TypeSource,
-    Context extends
-        | undefined
-        | MaybePromise<Record<string, unknown>>
-        | ((initialContext: YogaInitialContext) => MaybePromise<unknown>)
-> extends Omit<
-            YogaServerOptions<{}, {}>,
-            'typeDefs' | 'context' | 'cors'
-        >,
-        Omit<IExecutableSchemaDefinition<{}>, 'resolvers'> {
-    /**
-     * @default /graphql
-     *
-     * path for GraphQL handler
-     */
-    path?: string
-    /**
-     * TypeDefs
-     */
-    typeDefs: TypeDefs
-    context?: Context
-    schema?: GraphQLSchemaWithContext<Context>
-    /**
-     * If this field isn't presented, context type is null
-     * It must also contains params when used
-     * I don't know why please help
-     */
-    useContext?: (_: this['context']) => void
-    resolvers: Resolver<
-        TypeDefs extends string
-            ? CreateMobius<TypeDefs>
-            : {
-                  Query: Record<string, unknown>
-                  Mutation: Record<string, unknown>
-                  Subscription: Record<string, unknown>
-              },
-        Context extends undefined
-            ? { request: Request }
-            : Context extends (a: YogaInitialContext) => infer A
-            ? Prettify<NonNullable<Awaited<A>> & { request: Request }>
-            : Prettify<NonNullable<Awaited<Context>> & { request: Request }>
-    >
+  TypeDefs extends TypeSource,
+  Context extends
+    | undefined
+    | MaybePromise<Record<string, unknown>>
+    | ((initialContext: YogaInitialContext) => MaybePromise<unknown>),
+> extends Omit<YogaServerOptions<{}, {}>, 'typeDefs' | 'context' | 'cors'>,
+    Omit<IExecutableSchemaDefinition<{}>, 'resolvers'> {
+  /**
+   * @default /graphql
+   *
+   * path for GraphQL handler
+   */
+  path?: string;
+  /**
+   * TypeDefs
+   */
+  typeDefs: TypeDefs;
+  context?: Context;
+  schema?: GraphQLSchemaWithContext<YogaInitialContext>;
+  /**
+   * If this field isn't presented, context type is null
+   * It must also contains params when used
+   * I don't know why please help
+   */
+  useContext?: (_: this['context']) => void;
+  resolvers: Resolver<
+    TypeDefs extends string
+      ? CreateMobius<TypeDefs>
+      : {
+          Query: Record<string, unknown>;
+          Mutation: Record<string, unknown>;
+          Subscription: Record<string, unknown>;
+        },
+    Context extends undefined
+      ? { request: Request }
+      : Context extends (a: YogaInitialContext) => infer A
+        ? Prettify<NonNullable<Awaited<A>> & { request: Request }>
+        : Prettify<NonNullable<Awaited<Context>> & { request: Request }>
+  >;
 }
 
 /**
@@ -87,13 +83,13 @@ interface ElysiaYogaConfig<
  *     )
  *     .listen(8080)
  * ```
- * 
- *  * @example
+ *
+ * @example
  * ```typescript
  * import { Elysia } from 'elysia'
  * import { yoga, createSchema } from '@elysiajs/graphql-yoga'
  * const { loadFiles } = require('@graphql-tools/load-files')
- * 
+ *
  * const schema = createSchema({
  *  typeDefs: await loadFiles('src/typeDefs/*.graphql')
  *  resolvers: await loadFiles('src/resolvers/*.{js,ts}')
@@ -108,14 +104,15 @@ interface ElysiaYogaConfig<
  *     .listen(8080)
  * ```
  */
-export const yoga = <
-    TypeDefs extends string,
+export const yoga =
+  <
+    const TypeDefs extends string,
     Context extends
-        | undefined
-        | MaybePromise<Record<string, unknown>>
-        | ((initialContext: YogaInitialContext) => MaybePromise<unknown>),
-    Prefix extends string = '/graphql'
->({
+      | undefined
+      | MaybePromise<Record<string, unknown>>
+      | ((initialContext: YogaInitialContext) => MaybePromise<unknown>),
+    const Prefix extends string = '/graphql',
+  >({
     path = '/graphql' as Prefix,
     typeDefs,
     resolvers,
@@ -125,28 +122,30 @@ export const yoga = <
     schemaExtensions,
     schema,
     ...config
-}: ElysiaYogaConfig<TypeDefs, Context>) =>
-    (app: Elysia) => {
-        const yoga = createYoga({
-            cors: false,
-            ...config,
-            schema: schema || createSchema({
-                typeDefs,
-                resolvers: resolvers as any,
-                resolverValidationOptions,
-                inheritResolversFromInterfaces,
-                updateResolversInPlace,
-                schemaExtensions
-            })
-        })
+  }: ElysiaYogaConfig<TypeDefs, Context>) =>
+  (app: Elysia) => {
+    const yoga = createYoga({
+      cors: false,
+      ...config,
+      schema:
+        schema ||
+        createSchema({
+          typeDefs,
+          resolvers: resolvers as any,
+          resolverValidationOptions,
+          inheritResolversFromInterfaces,
+          updateResolversInPlace,
+          schemaExtensions,
+        }),
+    });
 
-        const result = app
-            .get(path, async ({ request }) => yoga.fetch(request))
-            .post(path, async ({ request }) => yoga.fetch(request), {
-                type: 'none'
-            })
+    const result = app
+      .get(path, async ({ request }) => yoga.fetch(request))
+      .post(path, async ({ request }) => yoga.fetch(request), {
+        type: 'none',
+      });
 
-        return result
-    }
+    return result;
+  };
 
-export default yoga
+export default yoga;
